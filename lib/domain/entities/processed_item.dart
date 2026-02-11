@@ -9,6 +9,7 @@ class ProcessedItem {
     required this.date,
     required this.fileSizeBytes,
     this.title,
+    this.ocrText,
   });
 
   final String id;
@@ -18,6 +19,8 @@ class ProcessedItem {
   final DateTime date;
   final int fileSizeBytes;
   final String? title;
+  /// Extracted OCR text for documents; stored at processing time, not recomputed.
+  final String? ocrText;
 
   bool get isFace => type == 'face';
   bool get isDocument => type == 'document';

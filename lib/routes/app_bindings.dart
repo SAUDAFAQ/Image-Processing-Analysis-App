@@ -6,12 +6,15 @@ import '../data/datasources/document_processing_datasource.dart';
 import '../data/datasources/face_processing_datasource.dart';
 import '../data/datasources/image_source_datasource.dart';
 import '../data/datasources/metadata_local_datasource.dart';
+import '../data/datasources/ocr_datasource.dart';
 import '../data/repositories/content_detection_repository_impl.dart';
 import '../data/repositories/document_processing_repository_impl.dart';
+import '../data/repositories/extract_document_text_repository_impl.dart';
 import '../data/repositories/face_processing_repository_impl.dart';
 import '../data/repositories/metadata_repository_impl.dart';
 import '../domain/repositories/content_detection_repository.dart';
 import '../domain/repositories/document_processing_repository.dart';
+import '../domain/repositories/extract_document_text_repository.dart';
 import '../domain/repositories/face_processing_repository.dart';
 import '../domain/repositories/image_source_repository.dart';
 import '../domain/repositories/metadata_repository.dart';
@@ -46,8 +49,16 @@ void _putReposAndUseCases() {
     FaceProcessingRepositoryImpl(FaceProcessingDataSource(storage)),
     permanent: true,
   );
+  final ocrDataSource = OcrDataSource();
+  Get.put<ExtractDocumentTextRepository>(
+    ExtractDocumentTextRepositoryImpl(ocrDataSource),
+    permanent: true,
+  );
   Get.put<DocumentProcessingRepository>(
-    DocumentProcessingRepositoryImpl(DocumentProcessingDataSource(storage)),
+    DocumentProcessingRepositoryImpl(
+      DocumentProcessingDataSource(storage),
+      Get.find<ExtractDocumentTextRepository>(),
+    ),
     permanent: true,
   );
   Get.put<ImageSourceRepository>(

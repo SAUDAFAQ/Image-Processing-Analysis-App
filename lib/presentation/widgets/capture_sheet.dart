@@ -45,14 +45,6 @@ class CaptureSheet extends StatelessWidget {
               onTap: () => _pick(ImageSourceType.gallery),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Capture Modal',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textMuted,
-              ),
-            ),
           ],
         ),
       ),

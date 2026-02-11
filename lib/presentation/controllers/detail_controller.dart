@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:open_filex/open_filex.dart';
 
@@ -14,6 +15,14 @@ class DetailController extends GetxController {
 
   final Rx<ProcessedItem?> item = Rx<ProcessedItem?>(null);
   final RxBool loading = true.obs;
+  final RxString searchQuery = ''.obs;
+
+  void copyOcrToClipboard() {
+    final t = item.value?.ocrText ?? '';
+    if (t.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: t));
+    Get.snackbar('', 'Copied to clipboard');
+  }
 
   @override
   void onReady() {

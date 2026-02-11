@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../controllers/result_controller.dart';
+import '../widgets/extracted_text_section.dart';
 
 class ResultPage extends GetView<ResultController> {
   const ResultPage({super.key});
@@ -34,6 +35,14 @@ class ResultPage extends GetView<ResultController> {
           child: Column(
             children: [
               if (isFace) _buildFaceComparison(context) else _buildDocPreview(context),
+              if (!isFace) ...[
+                const SizedBox(height: 24),
+                ExtractedTextSection(
+                  text: controller.extractedText.value,
+                  searchQuery: controller.searchQuery,
+                  onCopy: controller.copyOcrToClipboard,
+                ),
+              ],
               const SizedBox(height: 32),
               if (!isFace) ...[
                 SizedBox(
@@ -78,13 +87,6 @@ class ResultPage extends GetView<ResultController> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                isFace ? 'Face Processing Result' : 'Document Scan Result',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textMuted,
-                ),
-              ),
             ],
           ),
         );

@@ -1,22 +1,24 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../core/errors/app_failure.dart';
 import '../../core/services/storage_service.dart';
 
-/// Document pipeline: text rec → best-effort bounds → crop → enhance contrast → PDF → save.
+/// Document pipeline: enhance → write temp image (for OCR) → PDF → save.
 /// Structure is extension-ready for real CV (e.g. edge detection, perspective).
 class DocumentProcessingDataSource {
   DocumentProcessingDataSource(this._storage);
 
   final StorageService _storage;
 
-  Future<({String pdfPath, String? title})> process(String sourceImagePath) async {
+  /// Returns pdfPath, title, and path to enhanced image (for OCR). Caller runs OCR and may delete temp file.
+  Future<({String pdfPath, String? title, String enhancedImagePath})> process(String sourceImagePath) async {
     final file = File(sourceImagePath);
     if (!await file.exists()) {
       throw const ImageLoadFailure('Source image not found');
@@ -25,24 +27,19 @@ class DocumentProcessingDataSource {
     final decoded = img.decodeImage(bytes);
     if (decoded == null) throw const ImageLoadFailure('Failed to decode image');
 
-    // Text recognition for context; document bounds could use block corners in production.
-    final inputImage = InputImage.fromFilePath(sourceImagePath);
-    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
-    try {
-      await recognizer.processImage(inputImage);
-    } catch (_) {}
-    recognizer.close();
-
-    // Best-effort: use full image as "document". Replace with real edge/perspective later.
     img.Image processed = decoded;
     processed = _enhanceContrast(processed);
     final pngBytes = img.encodePng(processed);
+
+    final tempDir = await getTemporaryDirectory();
+    final enhancedPath = p.join(tempDir.path, 'imageflow_enhanced_${DateTime.now().millisecondsSinceEpoch}.png');
+    await File(enhancedPath).writeAsBytes(pngBytes);
 
     final dir = await _storage.getDocsDir();
     final pdfPath = _storage.uniquePath(dir, prefix: 'doc', extension: '.pdf');
     final title = 'Document ${DateTime.now().toIso8601String().split('T').first}';
     await _writePdfFromImage(pdfPath, pngBytes, title);
-    return (pdfPath: pdfPath, title: title);
+    return (pdfPath: pdfPath, title: title, enhancedImagePath: enhancedPath);
   }
 
   img.Image _enhanceContrast(img.Image src) {

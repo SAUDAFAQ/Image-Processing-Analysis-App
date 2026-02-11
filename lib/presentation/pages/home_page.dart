@@ -97,19 +97,6 @@ class HomePage extends GetView<HomeController> {
         backgroundColor: AppColors.accent,
         child: const Icon(Icons.add, color: AppColors.textPrimary),
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            'Home Screen',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textMuted,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

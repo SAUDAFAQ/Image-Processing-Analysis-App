@@ -58,8 +58,10 @@ lib/
 3. **Document pipeline**
    - Run text recognition (for future use; structure is extension-ready).
    - Best-effort “document” = full image (real edge detection / perspective correction can be plugged in later).
-   - Contrast enhancement via `image` package, then build a single-page PDF and save under `ImageFlow/docs/`.
-   - Save metadata with `type: document`.
+   - Contrast enhancement via `image` package; enhanced image is written to a temp file.
+   - **OCR** runs on the enhanced image (ML Kit text recognition); extracted text is attached to the result and stored in metadata.
+   - Build a single-page PDF and save under `ImageFlow/docs/`.
+   - Save metadata with `type: document` and `ocrText` (extracted string).
 
 ---
 
@@ -83,7 +85,7 @@ flutter run
 
 - **Folders:** `getApplicationDocumentsDirectory()/ImageFlow/faces/` and `.../ImageFlow/docs/`.
 - **Filenames:** Meaningful prefixes + timestamp (e.g. `face_1234567890.png`, `doc_1234567890.pdf`).
-- **Metadata:** Hive box `imageflow_metadata` stores a list of maps (id, paths, type, date, file size).
+- **Metadata:** Hive box `imageflow_metadata` stores a list of maps (id, paths, type, date, file size, optional `ocrText` for documents).
 
 ---
 
@@ -96,6 +98,30 @@ flutter run
 
 Controllers catch these (or generic `Exception`), show snackbar/dialog, and set error state for UI (Obx).
 
+---
+
+## Bonus – OCR Text Extraction
+
+Document processing includes **OCR text extraction** so users can view, search, and copy text from scanned documents.
+
+**Where OCR runs**  
+OCR runs **during the document pipeline**, not when the user opens the result or detail screen. After the image is enhanced, it is written to a temporary file; the document repository then calls the OCR repository (ML Kit text recognition) on that file. The extracted string is attached to `DocumentProcessingResult` and passed through to the result screen and, on "Done", persisted in Hive as `ocrText`.
+
+**Why we store results**  
+Storing the extracted text in metadata (Hive) avoids recomputing OCR every time the user opens the detail screen. It keeps the detail screen fast and avoids holding or re-running the recognizer. The history list and detail screen read `ocrText` from the database only.
+
+**Why not recompute**  
+Recomputing would require either re-running the full document pipeline (expensive) or running OCR again on the saved PDF/image (duplicate work, extra latency, and unnecessary recognizer usage). Storing once at processing time is the intended design.
+
+**Implementation notes**  
+- Domain: `ExtractDocumentTextRepository`; data: `OcrDataSource` (ML Kit, create/close recognizer per call) and `ExtractDocumentTextRepositoryImpl`.  
+- OCR failures or empty results are handled safely: the repository returns an empty string and the UI shows "No text detected."  
+- Result and Detail screens share a reusable **Extracted Text** section: scrollable/selectable text, search bar (case-insensitive highlight), and Copy button (clipboard + snackbar).
+
+**Possible improvements**  
+- Use ML Kit’s block/element structure or confidence scores for better UX (e.g. low-confidence warning).  
+- Support multiple language scripts via `TextRecognitionScript` or separate models.  
+- Optional “Re-run OCR” from detail for when the user improves the source image later.
 ---
 
 ## What would be improved in production

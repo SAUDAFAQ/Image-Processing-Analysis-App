@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../core/theme/app_theme.dart';
 import '../../routes/app_pages.dart';
 import '../controllers/detail_controller.dart';
+import '../widgets/extracted_text_section.dart';
 
 class DetailPage extends GetView<DetailController> {
   const DetailPage({super.key});
@@ -88,9 +89,14 @@ class DetailPage extends GetView<DetailController> {
               _MetaRow('Type', item.type),
               _MetaRow('Date', '${item.date}'),
               _MetaRow('File size', '${item.fileSizeBytes} bytes'),
-              _MetaRow('Original', item.originalPath),
-              _MetaRow('Result', item.resultPath),
+            
               if (item.isDocument) ...[
+                const SizedBox(height: 24),
+                ExtractedTextSection(
+                  text: item.ocrText ?? '',
+                  searchQuery: controller.searchQuery,
+                  onCopy: controller.copyOcrToClipboard,
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,

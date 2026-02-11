@@ -69,6 +69,7 @@ class ProcessingController extends GetxController {
             originalPath: sourceImagePath,
             resultPath: result.pdfPath,
             title: result.title,
+            extractedText: result.extractedText,
           ),
         );
       }
@@ -97,9 +98,11 @@ class ResultArgs {
     required this.originalPath,
     required this.resultPath,
     this.title,
+    this.extractedText,
   });
   final String type;
   final String originalPath;
   final String resultPath;
   final String? title;
+  final String? extractedText;
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:uuid/uuid.dart';
@@ -21,7 +22,15 @@ class ResultController extends GetxController {
   final RxString originalPath = ''.obs;
   final RxString resultPath = ''.obs;
   final RxString title = ''.obs;
+  final RxString extractedText = ''.obs;
+  final RxString searchQuery = ''.obs;
   final RxBool saving = false.obs;
+
+  void copyOcrToClipboard() {
+    if (extractedText.value.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: extractedText.value));
+    Get.snackbar('', 'Copied to clipboard');
+  }
 
   @override
   void onReady() {
@@ -31,6 +40,7 @@ class ResultController extends GetxController {
       originalPath.value = args.originalPath;
       resultPath.value = args.resultPath;
       title.value = args.title ?? '';
+      extractedText.value = args.extractedText ?? '';
     }
     super.onReady();
   }
@@ -57,6 +67,7 @@ class ResultController extends GetxController {
         date: DateTime.now(),
         fileSizeBytes: size,
         title: title.value.isEmpty ? null : title.value,
+        ocrText: type.value == 'PDF Document' ? (extractedText.value.isEmpty ? null : extractedText.value) : null,
       );
       await _saveMetadata(item);
       Get.offAllNamed(AppRoutes.home);

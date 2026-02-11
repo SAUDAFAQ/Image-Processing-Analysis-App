@@ -10,6 +10,7 @@ class ProcessedItemModel {
     required this.dateMillis,
     required this.fileSizeBytes,
     this.title,
+    this.ocrText,
   });
 
   final String id;
@@ -19,6 +20,7 @@ class ProcessedItemModel {
   final int dateMillis;
   final int fileSizeBytes;
   final String? title;
+  final String? ocrText;
 
   Map<String, dynamic> toMap() => {
         'id': id,
@@ -28,6 +30,7 @@ class ProcessedItemModel {
         'dateMillis': dateMillis,
         'fileSizeBytes': fileSizeBytes,
         'title': title,
+        'ocrText': ocrText,
       };
 
   static ProcessedItemModel fromMap(Map<dynamic, dynamic> map) {
@@ -39,6 +42,7 @@ class ProcessedItemModel {
       dateMillis: map['dateMillis'] as int,
       fileSizeBytes: map['fileSizeBytes'] as int,
       title: map['title'] as String?,
+      ocrText: map['ocrText'] as String?,
     );
   }
 
@@ -50,6 +54,7 @@ class ProcessedItemModel {
         date: DateTime.fromMillisecondsSinceEpoch(dateMillis),
         fileSizeBytes: fileSizeBytes,
         title: title,
+        ocrText: ocrText,
       );
 
   static ProcessedItemModel fromEntity(ProcessedItem e) => ProcessedItemModel(
@@ -60,5 +65,6 @@ class ProcessedItemModel {
         dateMillis: e.date.millisecondsSinceEpoch,
         fileSizeBytes: e.fileSizeBytes,
         title: e.title,
+        ocrText: e.ocrText,
       );
 }
