@@ -1,167 +1,177 @@
-# ImageFlow
+# Image Processing App
 
-A production-ready Flutter mobile application that acts as an **intelligent image processing system**: it accepts an image from the camera or gallery, automatically determines whether the content is a **face** or a **document**, runs the appropriate pipeline, and persists results with full history.
+**ImageFlow** – Intelligent image processing with face detection and document scanning.
 
-Built as a hiring case study with emphasis on **code quality**, **clean architecture**, and **maintainability**.
+
+## Overview
+
+ImageFlow is a Flutter mobile app that captures an image from the camera or gallery, **automatically classifies** the content as **face** or **document**, runs the corresponding pipeline, and **persists results** with full history. It was built as a hiring case study with emphasis on **clean architecture**, **GetX** (state, routing, DI), and **no `setState`**. Heavy work (decode, resize, pixel ops) runs off the UI thread via `compute()` isolates.
+
+**App flow:** Splash → Home → (FAB) Capture (bottom sheet) → Processing → Result → Done → back to Home; history items open Detail (face result images open a full-screen zoom viewer).
+
+---
+
+## Features
+
+- **Capture** – Camera or gallery via bottom sheet; image is copied and resized (max 1920px) to avoid OOM.
+- **Content detection** – ML Kit Face Detection: if ≥1 face → face pipeline; else → document pipeline.
+- **Face pipeline** – Detect faces → crop each → grayscale → paste back → save composite PNG; supports multiple faces.
+- **Document pipeline** – Enhance contrast → OCR on enhanced image → single-page PDF; extracted text stored and shown.
+- **Result** – Face: before/after; Document: PDF preview, extracted text (search, copy), Open PDF, Done to save.
+- **History** – List with thumbnail, type, date; delete; tap → detail.
+- **Detail** – Full metadata; for documents: extracted text + Open PDF; for face: tap image → full-screen zoom/pan viewer.
+- **Splash** – Gradient screen with tagline and tech chips, then navigates to Home.
+- **Error handling** – Permission, image load, ML, and storage failures surface as snackbars and error state.
 
 ---
 
 ## Architecture
 
-The app follows **clean architecture** with clear separation of concerns:
+Clean architecture with clear layer separation:
 
 ```
 lib/
-  core/           # Cross-cutting: errors, constants, services (e.g. storage)
+  core/           # Errors (AppFailure), constants, services (StorageService)
   data/           # Data sources (Hive, ML Kit, file system), models, repository implementations
-  domain/         # Business rules: entities, repository contracts, use cases
-  presentation/   # UI: GetX controllers, pages, reusable widgets
-  routes/         # GetX routing and dependency injection (bindings)
+  domain/         # Entities, repository contracts, use cases
+  presentation/   # GetX controllers, pages, reusable widgets
+  routes/         # GetX routing and bindings (DI per route)
   main.dart
 ```
 
 **Data flow (no ML or IO in UI):**
 
-- **UI** → **Controller** (GetX, reactive) → **UseCase** → **Repository** (abstract) → **DataSource** / **Service**
-- Controllers are thin: they call use cases and map results/failures to UI state (Obx).
-- Business logic lives in **use cases**; **repositories** abstract data (Hive, file system, ML Kit).
-- **Heavy work** (image decode, pixel ops) runs off the UI thread via `compute()` (isolate) where applicable.
+- **UI** → **Controller** → **UseCase** → **Repository** → **DataSource** / **Service**
+- Controllers are thin: call use cases, map results/failures to reactive state (Obx).
+- Business logic lives in **use cases**; **repositories** abstract Hive, file system, and ML Kit.
 
-**Package choices and trade-offs:**
+**Key packages:**
 
-| Choice | Reason |
+| Package | Purpose |
 |--------|--------|
-| **GetX** | State management, routing, and DI in one package; no `setState` anywhere; bindings give clear dependency wiring per route. |
-| **Hive** | Fast, no native dependency, works well for small metadata lists; data stored as `List<Map>` in one box to avoid code generation. |
-| **path_provider** | Standard way to get app documents dir; we create `/ImageFlow/faces/` and `/ImageFlow/docs/` under it. |
-| **google_mlkit_face_detection** | Official ML Kit; face detection drives content type (face vs document). |
-| **google_mlkit_text_recognition** | Used for OCR in the document pipeline; extracted text is stored in metadata. Document bounds/perspective are extension-ready for real CV. |
-| **image** | Pure Dart decode/crop/grayscale/encode; used inside `compute()` so UI never blocks. |
-| **pdf** | Generates PDF from processed image for document flow. |
-| **open_filex** | Opens generated PDF in external viewer. |
+| **GetX** | State management, routing, dependency injection; no `setState`. |
+| **Hive** | Metadata storage (list of maps in one box); no codegen. |
+| **path_provider** | App documents dir; `ImageFlow/faces/` and `ImageFlow/docs/` under it. |
+| **google_mlkit_face_detection** | Content type: face vs document. |
+| **google_mlkit_text_recognition** | OCR in document pipeline; text stored in metadata. |
+| **image** | Decode, crop, grayscale, encode; used inside `compute()`. |
+| **pdf** | Single-page PDF from processed image. |
+| **open_filex** | Open generated PDF in external app. |
+| **permission_handler** | Camera and photo library permissions. |
+| **uuid** | Unique IDs for history items. |
 
 ---
 
-## How detection works
+## State Management
 
-1. **Content type**
-   - Run **ML Kit Face Detection** on the selected image.
-   - If **at least one face** is found → **Face flow**.
-   - Otherwise → **Document flow**.
-
-2. **Face pipeline**
-   - Detect faces (ML Kit) on the main isolate (plugin uses platform channels).
-   - Get bounding boxes, then run in a **compute()** isolate: decode image → crop each face → convert to grayscale → paste back onto original → encode PNG.
-   - Save under `ImageFlow/faces/` with a timestamped name.
-   - Save metadata in Hive: `id`, `originalPath`, `resultPath`, `type: face`, `date`, `fileSize`.
-
-3. **Document pipeline**
-   - Run text recognition (for future use; structure is extension-ready).
-   - Best-effort “document” = full image (real edge detection / perspective correction can be plugged in later).
-   - Contrast enhancement via `image` package; enhanced image is written to a temp file.
-   - **OCR** runs on the enhanced image (ML Kit text recognition); extracted text is attached to the result and stored in metadata.
-   - Build a single-page PDF and save under `ImageFlow/docs/`.
-   - Save metadata with `type: document` and `ocrText` (extracted string).
+- **GetX reactive pattern** – Controllers hold `Rx*` / `.obs` variables; pages use `Obx(() => ...)` so only widgets that read those values rebuild when they change. No `setState` anywhere.
+- **GetView&lt;Controller&gt;** – Each page is a `GetView<XController>`; `controller` is resolved by GetX from the current route’s binding.
+- **Bindings** – Each route has a Binding that registers that screen’s controller (e.g. `Get.lazyPut<HomeController>(...)`). Shared repos and use cases are registered once (e.g. in a shared `_putReposAndUseCases()` called from bindings).
+- **Routing** – `Get.toNamed`, `Get.offNamed`, `Get.offAllNamed`, `Get.back()`; arguments passed via `Get.arguments`.
+- **Capture flow** – No dedicated controller; `CaptureSheet` uses `Get.find<PickImageUseCase>()` and navigates to Processing with the picked path.
 
 ---
 
-## How to run
+## Processing Pipelines
 
-**Prerequisites:** Flutter SDK (latest stable), null safety.
+### Content detection
+
+- **ML Kit Face Detection** on the selected image.
+- If **at least one face** → **Face pipeline**; otherwise → **Document pipeline**.
+
+### Face pipeline
+
+1. Detect faces (ML Kit) on main isolate; get bounding boxes.
+2. In a **compute()** isolate: decode image → for each face rect, crop → grayscale → paste back onto original → encode PNG.
+3. Save PNG under `ImageFlow/faces/` with timestamped filename (e.g. `face_1234567890.png`).
+4. Metadata saved on Result “Done”: `id`, `originalPath`, `resultPath`, `type: face`, `date`, `fileSizeBytes`.
+
+### Document pipeline
+
+1. Decode image; **enhance contrast** (`image` package).
+2. Write enhanced image to a **temporary file** (for OCR).
+3. **OCR** (ML Kit text recognition) on that file; extracted string attached to result.
+4. Build **single-page PDF** from enhanced image; save under `ImageFlow/docs/` (e.g. `doc_1234567890.pdf`).
+5. Temp image deleted; metadata on “Done”: `type: document`, `ocrText` (extracted string), plus paths, date, file size.
+
+Document boundary detection and perspective correction are **not implemented**; structure is extension-ready (full image is used).
+
+---
+
+## Persistence Strategy
+
+- **Files** – Stored under `getApplicationDocumentsDirectory()/ImageFlow/`:
+  - **faces/** – PNG result images (face pipeline).
+  - **docs/** – PDF files (document pipeline).
+- **Filenames** – `{prefix}_{timestamp}{extension}` (e.g. `face_1234567890.png`, `doc_1234567890.pdf`).
+- **Metadata** – **Hive** box `imageflow_metadata` stores a single list of maps. Each map has: `id`, `originalPath`, `resultPath`, `type` (`face` | `document`), `dateMillis`, `fileSizeBytes`, optional `title`, optional `ocrText` (documents). Data survives app restarts.
+- **Delete** – Removing an item from history deletes its metadata from Hive and the result file from disk.
+
+---
+
+## Bonus Feature
+
+**OCR text extraction (documents)**
+
+- **When** – During the document pipeline, after enhancement; not when opening Result or Detail.
+- **Flow** – Enhanced image → temp file → OCR repository (ML Kit) → extracted string → attached to `DocumentProcessingResult` → shown on Result screen and, on “Done”, persisted as `ocrText` in Hive.
+- **UI** – Result and Detail share a reusable **Extracted Text** section: scrollable text, **search** (case-insensitive highlight, auto-scroll to first match), **Copy** (clipboard + snackbar). Empty result shows “No text detected.”
+- **Why persist** – Avoid recomputing OCR on Detail; detail reads `ocrText` from DB only.
+- **Implementation** – Domain: `ExtractDocumentTextRepository`; data: `OcrDataSource` (ML Kit, recognizer created/closed per call), `ExtractDocumentTextRepositoryImpl`. Failures yield empty string; UI stays safe.
+
+**Possible improvements:** confidence scores, multiple scripts, optional “Re-run OCR” from detail.
+
+---
+
+## Trade-offs & Future Work
+
+**Document pipeline**
+
+- No real document boundary or perspective correction; full image used. Could add contour/edge detection and deskew.
+- Single-page PDF; could support multi-page and higher-quality rendering.
+
+**Performance & robustness**
+
+- Face detection runs on main isolate (plugin limitation); could move more into isolates if the plugin allows.
+- Thumbnail generation/caching for history list.
+- Retry and backoff for transient storage/ML failures.
+
+**UX & product**
+
+- Onboarding and clearer permission rationale.
+- Stronger empty/loading/error states and accessibility.
+- Optional cloud backup/sync.
+
+**Code & ops**
+
+- Unit tests for use cases/repositories; widget tests for main flows.
+- CI (e.g. `flutter analyze`, tests, build).
+- Crash reporting and analytics.
+- Feature flags for pipelines.
+
+**Security & privacy**
+
+- No logging of image content or paths in production.
+- Optional encryption for stored files and metadata.
+
+---
+
+## How to Run
+
+**Prerequisites:** Flutter SDK (latest stable), null safety. For iOS: Xcode (latest stable), CocoaPods.
+
+**First-time or after dependency changes:**
 
 ```bash
 flutter pub get
 flutter run
 ```
 
-- **Android:** Camera and (if needed) storage/photo permissions are in `AndroidManifest.xml`; request at runtime via `permission_handler`.
-- **iOS:** Usage descriptions for camera and photo library are in `Info.plist`.
+For **iOS**, if the app does not run or pods fail:
 
-**Suggested:** Use a real device for camera; simulator can use gallery only.
-
----
-
-## Storage rules
-
-- **Folders:** `getApplicationDocumentsDirectory()/ImageFlow/faces/` and `.../ImageFlow/docs/`.
-- **Filenames:** Meaningful prefixes + timestamp (e.g. `face_1234567890.png`, `doc_1234567890.pdf`).
-- **Metadata:** Hive box `imageflow_metadata` stores a list of maps (id, paths, type, date, file size, optional `ocrText` for documents).
-
----
-
-## Error handling
-
-- **No permission:** `PermissionFailure` → snackbar.
-- **Image load failure:** `ImageLoadFailure` (e.g. picker cancel, missing file).
-- **ML failure:** `MLFailure` (e.g. no faces when expected, detector error).
-- **Storage failure:** `StorageFailure` (e.g. write/read errors).
-
-Controllers catch these (or generic `Exception`), show snackbar/dialog, and set error state for UI (Obx).
-
----
-
-## Bonus – OCR Text Extraction
-
-Document processing includes **OCR text extraction** so users can view, search, and copy text from scanned documents.
-
-**Where OCR runs**  
-OCR runs **during the document pipeline**, not when the user opens the result or detail screen. After the image is enhanced, it is written to a temporary file; the document repository then calls the OCR repository (ML Kit text recognition) on that file. The extracted string is attached to `DocumentProcessingResult` and passed through to the result screen and, on "Done", persisted in Hive as `ocrText`.
-
-**Why we store results**  
-Storing the extracted text in metadata (Hive) avoids recomputing OCR every time the user opens the detail screen. It keeps the detail screen fast and avoids holding or re-running the recognizer. The history list and detail screen read `ocrText` from the database only.
-
-**Why not recompute**  
-Recomputing would require either re-running the full document pipeline (expensive) or running OCR again on the saved PDF/image (duplicate work, extra latency, and unnecessary recognizer usage). Storing once at processing time is the intended design.
-
-**Implementation notes**  
-- Domain: `ExtractDocumentTextRepository`; data: `OcrDataSource` (ML Kit, create/close recognizer per call) and `ExtractDocumentTextRepositoryImpl`.  
-- OCR failures or empty results are handled safely: the repository returns an empty string and the UI shows "No text detected."  
-- Result and Detail screens share a reusable **Extracted Text** section: scrollable/selectable text, search bar (case-insensitive highlight), and Copy button (clipboard + snackbar).
-
-**Possible improvements**  
-- Use ML Kit’s block/element structure or confidence scores for better UX (e.g. low-confidence warning).  
-- Support multiple language scripts via `TextRecognitionScript` or separate models.  
-- Optional “Re-run OCR” from detail for when the user improves the source image later.
----
-
-## What would be improved in production
-
-1. **Document pipeline**
-   - Real document boundary detection (e.g. contour/edge detection).
-   - Perspective correction and deskew.
-   - Optional multi-page PDF and higher-quality rendering.
-
-2. **Performance and robustness**
-   - Move more of the face pipeline (including ML) into isolates where the plugin allows, or use a dedicated isolate for heavy steps.
-   - Thumbnail generation/caching for the history list.
-   - Retry and backoff for transient storage/ML failures.
-
-3. **UX and product**
-   - Onboarding and explicit permission rationale.
-   - Better empty/loading/error states and accessibility.
-   - Optional cloud backup and sync of metadata (and/or files).
-
-4. **Code and ops**
-   - Unit tests for use cases and repositories; widget tests for main flows.
-   - CI (e.g. `flutter analyze`, tests, build).
-   - Crash reporting and analytics.
-   - Feature flags for face vs document pipelines.
-
-5. **Security and privacy**
-   - No logging of image content or paths in production.
-   - Optional app-level encryption for stored files and metadata.
-
----
-
-## Screens (required flow)
-
-The app starts with a **Splash** screen (gradient, tagline, tech chips), then navigates to Home.
-
-1. **Home** – List of history (thumbnail, type, date), delete, tap → detail, FAB → capture (bottom sheet). Empty state: “No history yet” and pull-to-refresh.
-2. **Capture** – Bottom sheet: Camera / Gallery.
-3. **Processing** – Shows image, progress bar, status text (e.g. “Detecting faces…”, “Cropping…”, “Enhancing…”). Error message shown if something fails.
-4. **Result** – **Face:** before/after images; **Document:** PDF icon, title, **Extracted Text** section (search, copy), and “Open PDF”. Done → save metadata and go back to Home.
-5. **Detail** – Full-screen metadata (type, date, file size). For documents: Extracted Text (search, copy) and “Open PDF”. For face results: tapping the result image opens a **full-screen image viewer** (zoom/pan).
-6. **Full-screen image** – Shown when tapping a face result image on Detail; zoom and pan via `InteractiveViewer`.
-
-All state and navigation use **GetX** (reactive state and routing); **no `setState`** is used.
+```bash
+flutter clean
+flutter pub get
+cd ios && rm -rf Pods Podfile.lock && pod install && cd ..
+flutter run
+```

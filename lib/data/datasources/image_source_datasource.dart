@@ -18,16 +18,37 @@ class ImageSourceDataSource implements ImageSourceRepository {
 
   @override
   Future<String> pickImage(ImageSourceType source) async {
-    if (source == ImageSourceType.camera) {
-      final status = await Permission.camera.request();
-      if (!status.isGranted) {
-        throw const PermissionFailure('Camera permission denied');
-      }
+    final permission = source == ImageSourceType.camera ? Permission.camera : Permission.photos;
+    
+    // Check current status first (doesn't trigger dialog)
+    var status = await permission.status;
+    
+    // If denied (includes "never asked"), request permission (this shows the system dialog)
+    if (status.isDenied) {
+      status = await permission.request();
+    }
+    
+    // permission_handler: granted, denied, restricted, permanentlyDenied, limited, provisional
+    if (status.isGranted || status.isLimited) {
+      // isLimited (e.g. iOS "Select Photos...") still allows picking
+    } else if (status.isPermanentlyDenied) {
+      // Don't call request() again - user must go to Settings
+      throw PermissionFailure(
+        source == ImageSourceType.camera
+            ? 'Camera access was denied. Open Settings → ImageFlow to allow access.'
+            : 'Photo library access was denied. Open Settings → ImageFlow to allow access.',
+      );
+    } else if (status.isRestricted) {
+      throw const PermissionFailure(
+        'Access is restricted (e.g. by parental controls). Enable it in Settings.',
+      );
     } else {
-      final status = await Permission.photos.request();
-      if (!status.isGranted) {
-        throw const PermissionFailure('Photo library permission denied');
-      }
+      // Still denied after request (user tapped "Don't Allow" in dialog)
+      throw PermissionFailure(
+        source == ImageSourceType.camera
+            ? 'Camera permission denied. Please allow access when prompted.'
+            : 'Photo library permission denied. Please allow access when prompted.',
+      );
     }
 
     // Request smaller size from picker to reduce memory; some devices still return large files.

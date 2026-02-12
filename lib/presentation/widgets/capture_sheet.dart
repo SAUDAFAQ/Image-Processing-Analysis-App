@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/errors/app_failure.dart';
 import '../../core/theme/app_theme.dart';
@@ -52,13 +53,24 @@ class CaptureSheet extends StatelessWidget {
   }
 
   Future<void> _pick(ImageSourceType source) async {
+    Get.back(); // Close sheet first so the system permission dialog can appear on top (iOS)
+    await Future.delayed(const Duration(milliseconds: 400));
     final useCase = Get.find<PickImageUseCase>();
     try {
       final path = await useCase(source);
-      Get.back();
       Get.toNamed(AppRoutes.processing, arguments: path);
     } on PermissionFailure catch (e) {
-      Get.snackbar('Permission', e.message);
+      Get.snackbar(
+        'Permission needed',
+        e.message,
+        mainButton: TextButton(
+          onPressed: () {
+            Get.closeCurrentSnackbar();
+            openAppSettings();
+          },
+          child: const Text('Open Settings'),
+        ),
+      );
     } on ImageLoadFailure catch (e) {
       Get.snackbar('Error', e.message);
     } catch (e) {
