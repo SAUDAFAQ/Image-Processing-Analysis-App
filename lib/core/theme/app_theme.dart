@@ -28,6 +28,10 @@ class AppColors {
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFB0B0C0);
   static const Color textMuted = Color(0xFF808090);
+
+  // Splash / home hero gradient
+  static const Color heroGradientTop = Color(0xFF160325);
+  static const Color heroGradientBottom = Color(0xFF05010A);
 }
 
 class AppTheme {

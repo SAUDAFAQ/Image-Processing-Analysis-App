@@ -67,7 +67,7 @@ class ResultController extends GetxController {
         date: DateTime.now(),
         fileSizeBytes: size,
         title: title.value.isEmpty ? null : title.value,
-        ocrText: type.value == 'PDF Document' ? (extractedText.value.isEmpty ? null : extractedText.value) : null,
+        ocrText: type.value == 'document' ? (extractedText.value.isEmpty ? null : extractedText.value) : null,
       );
       await _saveMetadata(item);
       Get.offAllNamed(AppRoutes.home);

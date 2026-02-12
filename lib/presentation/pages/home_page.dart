@@ -13,7 +13,7 @@ class HomePage extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'ImageFlow',
@@ -26,72 +26,84 @@ class HomePage extends GetView<HomeController> {
         backgroundColor: AppColors.background,
         elevation: 0,
       ),
-      body: Obx(() {
-        if (controller.loading.value && controller.items.isEmpty) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.accent),
-          );
-        }
-        if (controller.error.value.isNotEmpty && controller.items.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  controller.error.value,
-                  style: const TextStyle(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: controller.loadHistory,
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          );
-        }
-        if (controller.items.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.photo_library_outlined,
-                  size: 64,
-                  color: AppColors.textMuted,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No history yet',
-                  style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tap + to capture an image',
-                  style: TextStyle(color: AppColors.textMuted),
-                ),
-              ],
-            ),
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: controller.loadHistory,
-          color: AppColors.accent,
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-            itemCount: controller.items.length,
-            itemBuilder: (context, index) {
-              final item = controller.items[index];
-              return _HistoryTile(
-                item: item,
-                onTap: () => controller.openDetail(item.id),
-                onDelete: () => controller.deleteItem(item.id),
-              );
-            },
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.heroGradientTop,
+              AppColors.heroGradientBottom,
+            ],
           ),
-        );
-      }),
+        ),
+        child: Obx(() {
+          if (controller.loading.value && controller.items.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.accent),
+            );
+          }
+          if (controller.error.value.isNotEmpty && controller.items.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    controller.error.value,
+                    style: const TextStyle(color: AppColors.textSecondary),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: controller.loadHistory,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+          if (controller.items.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.photo_library_outlined,
+                    size: 64,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No history yet',
+                    style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap + to capture an image',
+                    style: TextStyle(color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: controller.loadHistory,
+            color: AppColors.accent,
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+              itemCount: controller.items.length,
+              itemBuilder: (context, index) {
+                final item = controller.items[index];
+                return _HistoryTile(
+                  item: item,
+                  onTap: () => controller.openDetail(item.id),
+                  onDelete: () => controller.deleteItem(item.id),
+                );
+              },
+            ),
+          );
+        }),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: controller.openCapture,
         backgroundColor: AppColors.accent,

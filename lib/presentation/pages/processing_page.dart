@@ -18,7 +18,7 @@ class ProcessingPage extends GetView<ProcessingController> {
       });
     }
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         title: const Text(
@@ -26,90 +26,89 @@ class ProcessingPage extends GetView<ProcessingController> {
           style: TextStyle(color: AppColors.textPrimary),
         ),
       ),
-      body: Obx(() {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceElevated,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: controller.imagePath.value.isNotEmpty
-                        ? Image.file(
-                            File(controller.imagePath.value),
-                            height: 160,
-                            width: 160,
-                            fit: BoxFit.cover,
-                          )
-                        : SizedBox(
-                            height: 160,
-                            width: 160,
-                            child: Icon(
-                              Icons.image_outlined,
-                              size: 80,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Processing...',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: controller.progress.value,
-                    backgroundColor: AppColors.progressTrack,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
-                    minHeight: 6,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  controller.progressMessage.value,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
-                  ),
-                ),
-                if (controller.error.value.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    controller.error.value,
-                    style: const TextStyle(color: Colors.redAccent),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      }),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            'Processing Screen',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textMuted,
-            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.heroGradientTop,
+              AppColors.heroGradientBottom,
+            ],
           ),
         ),
+        child: Obx(() {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: controller.imagePath.value.isNotEmpty
+                          ? Image.file(
+                              File(controller.imagePath.value),
+                              height: 160,
+                              width: 160,
+                              fit: BoxFit.cover,
+                            )
+                          : SizedBox(
+                              height: 160,
+                              width: 160,
+                              child: Icon(
+                                Icons.image_outlined,
+                                size: 80,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Processing...',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: controller.progress.value,
+                      backgroundColor: AppColors.progressTrack,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                      minHeight: 6,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    controller.progressMessage.value,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                  if (controller.error.value.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      controller.error.value,
+                      style: const TextStyle(color: Colors.redAccent),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }),
       ),
     );
   }

@@ -36,13 +36,4 @@ class MetadataRepositoryImpl implements MetadataRepository {
     }
     await _local.deleteById(id);
   }
-
-  @override
-  Future<void> deleteAll() async {
-    final list = await _local.getAll();
-    final ids = list.map((e) => e.id).toList();
-    for (final id in ids) {
-      await deleteById(id);
-    }
-  }
 }

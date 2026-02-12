@@ -25,7 +25,3 @@ class MLFailure extends AppFailure {
 class StorageFailure extends AppFailure {
   const StorageFailure(super.message);
 }
-
-class UnknownFailure extends AppFailure {
-  const UnknownFailure(super.message);
-}

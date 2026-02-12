@@ -20,7 +20,7 @@ class ImageFlowApp extends StatelessWidget {
       title: 'ImageFlow',
       theme: AppTheme.dark,
       themeMode: ThemeMode.dark,
-      initialRoute: AppRoutes.home,
+      initialRoute: AppRoutes.splash,
       getPages: AppPages.routes,
     );
   }

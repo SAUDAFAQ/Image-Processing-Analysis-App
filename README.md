@@ -35,7 +35,7 @@ lib/
 | **Hive** | Fast, no native dependency, works well for small metadata lists; data stored as `List<Map>` in one box to avoid code generation. |
 | **path_provider** | Standard way to get app documents dir; we create `/ImageFlow/faces/` and `/ImageFlow/docs/` under it. |
 | **google_mlkit_face_detection** | Official ML Kit; face detection drives content type (face vs document). |
-| **google_mlkit_text_recognition** | Used in document pipeline for structure; document bounds/perspective are placeholder for real CV. |
+| **google_mlkit_text_recognition** | Used for OCR in the document pipeline; extracted text is stored in metadata. Document bounds/perspective are extension-ready for real CV. |
 | **image** | Pure Dart decode/crop/grayscale/encode; used inside `compute()` so UI never blocks. |
 | **pdf** | Generates PDF from processed image for document flow. |
 | **open_filex** | Opens generated PDF in external viewer. |
@@ -155,11 +155,13 @@ Recomputing would require either re-running the full document pipeline (expensiv
 
 ## Screens (required flow)
 
-1. **Home** – List/grid of history (thumbnail, type, date), delete, tap → detail, FAB → capture (bottom sheet).
+The app starts with a **Splash** screen (gradient, tagline, tech chips), then navigates to Home.
+
+1. **Home** – List of history (thumbnail, type, date), delete, tap → detail, FAB → capture (bottom sheet). Empty state: “No history yet” and pull-to-refresh.
 2. **Capture** – Bottom sheet: Camera / Gallery.
-3. **Processing** – Shows image, progress bar, status text (e.g. “Detecting faces…”, “Cropping…”, “Enhancing…”).
-4. **Result** – Face: before/after; Document: PDF icon/title and “Open PDF”. Done → save metadata and go back to Home.
-5. **Detail** – Full-screen metadata and “Open PDF” for documents.
+3. **Processing** – Shows image, progress bar, status text (e.g. “Detecting faces…”, “Cropping…”, “Enhancing…”). Error message shown if something fails.
+4. **Result** – **Face:** before/after images; **Document:** PDF icon, title, **Extracted Text** section (search, copy), and “Open PDF”. Done → save metadata and go back to Home.
+5. **Detail** – Full-screen metadata (type, date, file size). For documents: Extracted Text (search, copy) and “Open PDF”. For face results: tapping the result image opens a **full-screen image viewer** (zoom/pan).
+6. **Full-screen image** – Shown when tapping a face result image on Detail; zoom and pan via `InteractiveViewer`.
 
 All state and navigation use **GetX** (reactive state and routing); **no `setState`** is used.
-# Image-Processing-Analysis-App

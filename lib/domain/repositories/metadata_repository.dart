@@ -6,5 +6,4 @@ abstract class MetadataRepository {
   Future<ProcessedItem?> getById(String id);
   Future<void> save(ProcessedItem item);
   Future<void> deleteById(String id);
-  Future<void> deleteAll();
 }

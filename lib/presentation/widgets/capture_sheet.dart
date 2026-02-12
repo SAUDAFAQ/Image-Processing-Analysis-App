@@ -18,7 +18,7 @@ class CaptureSheet extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+      padding: const EdgeInsets.all(28),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,

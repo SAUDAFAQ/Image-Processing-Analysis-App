@@ -13,7 +13,7 @@ class ResultPage extends GetView<ResultController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         leading: IconButton(
@@ -28,23 +28,51 @@ class ResultPage extends GetView<ResultController> {
               ),
             )),
       ),
-      body: Obx(() {
-        final isFace = controller.type.value == 'face';
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              if (isFace) _buildFaceComparison(context) else _buildDocPreview(context),
-              if (!isFace) ...[
-                const SizedBox(height: 24),
-                ExtractedTextSection(
-                  text: controller.extractedText.value,
-                  searchQuery: controller.searchQuery,
-                  onCopy: controller.copyOcrToClipboard,
-                ),
-              ],
-              const SizedBox(height: 32),
-              if (!isFace) ...[
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.heroGradientTop,
+              AppColors.heroGradientBottom,
+            ],
+          ),
+        ),
+        child: Obx(() {
+          final isFace = controller.type.value == 'face';
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                if (isFace) _buildFaceComparison(context) else _buildDocPreview(context),
+                if (!isFace) ...[
+                  const SizedBox(height: 24),
+                  ExtractedTextSection(
+                    text: controller.extractedText.value,
+                    searchQuery: controller.searchQuery,
+                    onCopy: controller.copyOcrToClipboard,
+                  ),
+                ],
+                const SizedBox(height: 32),
+                if (!isFace) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: AppColors.textPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: controller.openPdf,
+                      child: const Text('Open PDF'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -56,41 +84,25 @@ class ResultPage extends GetView<ResultController> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: controller.openPdf,
-                    child: const Text('Open PDF'),
+                    onPressed: controller.saving.value ? null : controller.done,
+                    child: controller.saving.value
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.textPrimary,
+                            ),
+                          )
+                        : const Text('Done'),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
               ],
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: AppColors.textPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: controller.saving.value ? null : controller.done,
-                  child: controller.saving.value
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.textPrimary,
-                          ),
-                        )
-                      : const Text('Done'),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      }),
+            ),
+          );
+        }),
+      ),
     );
   }
 

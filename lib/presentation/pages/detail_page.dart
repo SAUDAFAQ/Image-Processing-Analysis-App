@@ -14,7 +14,7 @@ class DetailPage extends GetView<DetailController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         title: const Text(
@@ -26,99 +26,110 @@ class DetailPage extends GetView<DetailController> {
           onPressed: () => Get.back(),
         ),
       ),
-      body: Obx(() {
-        if (controller.loading.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.accent),
-          );
-        }
-        final item = controller.item.value;
-        if (item == null) {
-          return const Center(
-            child: Text(
-              'Item not found',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          );
-        }
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (item.resultPath.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: item.isDocument
-                      ? Container(
-                          height: 300,
-                          decoration: BoxDecoration(
-                            color: AppColors.accentPdf,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.accentPdfOutline,
-                              width: 2,
-                            ),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'PDF',
-                              style: TextStyle(
-                                color: AppColors.accentPdfOutline,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        )
-                      : GestureDetector(
-                          onTap: () {
-                            Get.toNamed(
-                              AppRoutes.fullImage,
-                              arguments: item.resultPath,
-                            );
-                          },
-                          child: Image.file(
-                            File(item.resultPath),
-                            height: 300,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                ),
-              const SizedBox(height: 24),
-              _MetaRow('Type', item.type),
-              _MetaRow('Date', '${item.date}'),
-              _MetaRow('File size', '${item.fileSizeBytes} bytes'),
-            
-              if (item.isDocument) ...[
-                const SizedBox(height: 24),
-                ExtractedTextSection(
-                  text: item.ocrText ?? '',
-                  searchQuery: controller.searchQuery,
-                  onCopy: controller.copyOcrToClipboard,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                      foregroundColor: AppColors.textPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: controller.openPdf,
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('Open PDF'),
-                  ),
-                ),
-              ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.heroGradientTop,
+              AppColors.heroGradientBottom,
             ],
           ),
-        );
-      }),
+        ),
+        child: Obx(() {
+          if (controller.loading.value) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.accent),
+            );
+          }
+          final item = controller.item.value;
+          if (item == null) {
+            return const Center(
+              child: Text(
+                'Item not found',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            );
+          }
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (item.resultPath.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: item.isDocument
+                        ? Container(
+                            height: 300,
+                            decoration: BoxDecoration(
+                              color: AppColors.accentPdf,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.accentPdfOutline,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'PDF',
+                                style: TextStyle(
+                                  color: AppColors.accentPdfOutline,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          )
+                        : GestureDetector(
+                            onTap: () {
+                              Get.toNamed(
+                                AppRoutes.fullImage,
+                                arguments: item.resultPath,
+                              );
+                            },
+                            child: Image.file(
+                              File(item.resultPath),
+                              height: 300,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                  ),
+                const SizedBox(height: 24),
+                _MetaRow('Type', item.type),
+                _MetaRow('Date', '${item.date}'),
+                _MetaRow('File size', '${item.fileSizeBytes} bytes'),
+                if (item.isDocument) ...[
+                  const SizedBox(height: 24),
+                  ExtractedTextSection(
+                    text: item.ocrText ?? '',
+                    searchQuery: controller.searchQuery,
+                    onCopy: controller.copyOcrToClipboard,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: AppColors.textPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: controller.openPdf,
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('Open PDF'),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 }

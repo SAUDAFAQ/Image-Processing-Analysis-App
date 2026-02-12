@@ -6,9 +6,11 @@ import '../presentation/pages/full_image_page.dart';
 import '../presentation/pages/home_page.dart';
 import '../presentation/pages/processing_page.dart';
 import '../presentation/pages/result_page.dart';
+import '../presentation/pages/splash_page.dart';
 
 abstract class AppRoutes {
-  static const home = '/';
+  static const splash = '/';
+  static const home = '/home';
   static const processing = '/processing';
   static const result = '/result';
   static const detail = '/detail';
@@ -17,6 +19,10 @@ abstract class AppRoutes {
 
 class AppPages {
   static final routes = [
+    GetPage(
+      name: AppRoutes.splash,
+      page: () => const SplashPage(),
+    ),
     GetPage(
       name: AppRoutes.home,
       page: () => const HomePage(),
